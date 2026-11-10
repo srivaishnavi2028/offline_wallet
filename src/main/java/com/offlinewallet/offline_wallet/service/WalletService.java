@@ -1,5 +1,5 @@
 package com.offlinewallet.offline_wallet.service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -91,7 +91,7 @@ public class WalletService {
         }
         return addMoney(user.getWallet().getId(),amount);
     }
-//    @Transactional
+ @Transactional
     public PaymentResponse payMoneyByEmail(String email,Double amount,String receiver) {
         User sender =userRepository.findByEmail(email).orElse(null);
         if (sender == null || sender.getWallet() == null) {
