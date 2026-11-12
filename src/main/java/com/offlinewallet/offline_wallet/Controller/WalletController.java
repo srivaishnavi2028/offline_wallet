@@ -32,9 +32,11 @@ public class WalletController {
 		return walletService.addMoneyByEmail(email, amount);
 	}
 	@PostMapping("/wallet/my-wallet/pay")
-	public PaymentResponse payMoney(Authentication authentication,@RequestParam Double amount,@RequestParam(required=false) String receiver) {
-		String email=authentication.getName();
-		return walletService.payMoneyByEmail(email, amount,receiver);
+	public PaymentResponse payMoney(Authentication authentication,@RequestParam Double amount,@RequestParam(required = false) String receiver,
+			@RequestParam String clientTransactionId) {
+	    String email = authentication.getName();
+	    return walletService.payMoneyByEmail(
+	            email, amount, receiver, clientTransactionId);
 	}
 	
 	@GetMapping("/wallet/my-transactions")

@@ -223,6 +223,7 @@ async function addMoney() {
 }
 
 
+
 // ============================================
 // PAY MONEY
 // ============================================
@@ -235,222 +236,107 @@ async function payMoney() {
     const receiver =
         document.getElementById("receiver").value.trim();
 
-
-    // --------------------------------------------
-    // VALIDATE AMOUNT
-    // --------------------------------------------
-
     if (!amount || Number(amount) <= 0) {
-
         alert("Enter a valid amount");
-
         return;
     }
-
-
-    // --------------------------------------------
-    // VALIDATE RECEIVER
-    // --------------------------------------------
 
     if (!receiver) {
-
         alert("Enter receiver email");
-
         return;
     }
 
-
-    console.log(
-        "========== PAYMENT START =========="
-    );
-
-    console.log(
-        "Amount:",
-        amount
-    );
-
-    console.log(
-        "Receiver:",
-        receiver
-    );
-
-    console.log(
-        "Token exists:",
-        !!token
-    );
-
+    console.log("========== PAYMENT START ==========");
+    console.log("Amount:", amount);
+    console.log("Receiver:", receiver);
+    console.log("Token exists:", !!token);
 
     try {
 
+        // Generate or reuse the pending payment ID
+        const paymentKey =
+            `pendingPayment:${Number(amount)}:${receiver.toLowerCase()}`;
+
+        let clientTransactionId =
+            sessionStorage.getItem(paymentKey);
+
+        if (!clientTransactionId) {
+            clientTransactionId = crypto.randomUUID();
+            sessionStorage.setItem(paymentKey, clientTransactionId);
+        }
+
         const url =
-            `http://localhost:8020/wallet/my-wallet/pay?amount=${encodeURIComponent(amount)}&receiver=${encodeURIComponent(receiver)}`;
+            `http://localhost:8020/wallet/my-wallet/pay?amount=${encodeURIComponent(amount)}&receiver=${encodeURIComponent(receiver)}&clientTransactionId=${encodeURIComponent(clientTransactionId)}`;
 
+        console.log("Payment URL:", url);
 
-        console.log(
-            "Payment URL:",
-            url
-        );
+        const response = await fetch(url, {
+            method: "POST",
+            headers: getHeaders()
+        });
 
-
-        const response =
-            await fetch(
-                url,
-                {
-                    method: "POST",
-                    headers: getHeaders()
-                }
-            );
-
-
-        console.log(
-            "Payment response status:",
-            response.status
-        );
-
-
-        // --------------------------------------------
-        // UNAUTHORIZED
-        // --------------------------------------------
+        console.log("Payment response status:", response.status);
 
         if (response.status === 401) {
-
-            console.error(
-                "JWT authentication failed"
-            );
-
+            console.error("JWT authentication failed");
             logout();
-
             return;
         }
-
-
-        // --------------------------------------------
-        // FORBIDDEN
-        // --------------------------------------------
 
         if (response.status === 403) {
-
-            const text =
-                await response.text();
-
-            console.error(
-                "403 FORBIDDEN:",
-                text
-            );
-
-            alert(
-                "Payment rejected by server (403).\n" +
-                "Check Spring Security / JWT."
-            );
-
+            const text = await response.text();
+            console.error("403 FORBIDDEN:", text);
+            alert("Payment rejected by server (403). Check Spring Security / JWT.");
             return;
         }
 
-
-        // --------------------------------------------
-        // OTHER HTTP ERRORS
-        // --------------------------------------------
-
         if (!response.ok) {
-
-            const text =
-                await response.text();
-
-            console.error(
-                "Payment failed:",
-                response.status,
-                text
-            );
-
-
-            // ----------------------------------------
-            // READ BACKEND ERROR MESSAGE
-            // ----------------------------------------
+            const text = await response.text();
+            console.error("Payment failed:", response.status, text);
 
             try {
-
-                const errorData =
-                    JSON.parse(text);
-
-                alert(
-                    errorData.message ||
-                    "Payment failed"
-                );
-
+                const errorData = JSON.parse(text);
+                alert(errorData.message || "Payment failed");
             } catch (error) {
-
-                alert(
-                    "Payment failed.\nStatus: " +
-                    response.status
-                );
+                alert("Payment failed. Status: " + response.status);
             }
 
             return;
         }
 
+        const data = await response.json();
 
-        // --------------------------------------------
-        // SUCCESS RESPONSE
-        // --------------------------------------------
+        console.log("Payment response:", data);
 
-        const data =
-            await response.json();
+        // Only clear the pending ID for a completed payment
+        if (
+            data.message !== "Payment successful" &&
+            data.message !== "Payment already processed"
+        ) {
+            alert(data.message || "Payment failed");
+            return;
+        }
 
-
-        console.log(
-            "Payment response:",
-            data
-        );
-
+        sessionStorage.removeItem(paymentKey);
 
         alert(data.message);
 
-
-        // --------------------------------------------
-        // CLEAR INPUTS
-        // --------------------------------------------
-
-        document.getElementById(
-            "payamount"
-        ).value = "";
-
-
-        document.getElementById(
-            "receiver"
-        ).value = "";
-
-
-        // --------------------------------------------
-        // REFRESH WALLET
-        // --------------------------------------------
+        document.getElementById("payamount").value = "";
+        document.getElementById("receiver").value = "";
 
         await loadWallet();
-
-
-        // --------------------------------------------
-        // REFRESH TRANSACTIONS
-        // --------------------------------------------
-
         await loadTransactions();
 
-
-        console.log(
-            "========== PAYMENT END =========="
-        );
-
+        console.log("========== PAYMENT END ==========");
 
     } catch (error) {
 
-        console.error(
-            "Payment JavaScript error:",
-            error
-        );
+        console.error("Payment JavaScript error:", error);
 
-        alert(
-            "Unable to make payment"
-        );
+        alert("Unable to make payment");
     }
 }
+
 
 
 // ============================================

@@ -17,6 +17,8 @@ public class Transaction {
 	private Long id;
 	private Double amount;
 	private String type;
+	@Column(unique = true)
+	private String clientTransactionId;
 	private String  receiver;
 	public Transaction(Double amount, String type, String receiver) {
 		super();
@@ -24,6 +26,13 @@ public class Transaction {
 		this.type = type;
 		this.receiver = receiver;
 		this.createdAt = LocalDateTime.now();
+	}
+	public String getClientTransactionId() {
+	    return clientTransactionId;
+	}
+
+	public void setClientTransactionId(String clientTransactionId) {
+	    this.clientTransactionId = clientTransactionId;
 	}
 	@ManyToOne
 	@JsonIgnore
