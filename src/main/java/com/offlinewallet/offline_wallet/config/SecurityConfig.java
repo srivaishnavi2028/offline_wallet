@@ -67,7 +67,6 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
             		.requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
                 .requestMatchers("/users/register", "/users/login").permitAll()
-                .requestMatchers("/wallet/my-transactions").permitAll()
                 .requestMatchers("/wallet/**").authenticated()
                 .anyRequest().authenticated()
             )
