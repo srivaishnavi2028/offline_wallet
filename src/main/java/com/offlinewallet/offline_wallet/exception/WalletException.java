@@ -1,8 +1,22 @@
 package com.offlinewallet.offline_wallet.exception;
 
-public class WalletException extends RuntimeException{
-	public WalletException(String message) {
-		super(message);
-	}
+import org.springframework.http.HttpStatus;
 
+public class WalletException extends RuntimeException {
+
+    private final HttpStatus status;
+
+    public WalletException(String message) {
+        super(message);
+        this.status = HttpStatus.BAD_REQUEST;
+    }
+
+    public WalletException(String message, HttpStatus status) {
+        super(message);
+        this.status = status;
+    }
+
+    public HttpStatus getStatus() {
+        return status;
+    }
 }
